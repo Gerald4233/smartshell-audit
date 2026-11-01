@@ -22,6 +22,8 @@
       --danger-bg: rgba(255, 59, 105, 0.12);
       --success: #00e676;
       --success-bg: rgba(0, 230, 118, 0.12);
+      --bar-color: #a855f7;
+      --wh-color: #3b82f6;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -38,7 +40,7 @@
       padding: 16px 12px;
     }
 
-    .container { max-width: 900px; margin: 0 auto; }
+    .container { max-width: 960px; margin: 0 auto; }
 
     header {
       display: flex;
@@ -145,7 +147,7 @@
     }
     .filters-bar input { grid-column: span 2; }
 
-    /* Таблица для больших экранов */
+    /* Таблица для ПК */
     .desktop-table-wrapper { display: block; overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; }
     th {
@@ -183,31 +185,34 @@
       display: inline-block;
     }
 
-    .fact-control {
+    .dual-inputs {
       display: inline-flex;
       align-items: center;
       gap: 6px;
     }
+    .dual-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    .dual-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .dual-label.bar { color: var(--bar-color); }
+    .dual-label.wh { color: var(--wh-color); }
+
     .fact-input {
-      width: 60px;
+      width: 54px;
       text-align: center;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 1.05rem;
+      font-size: 1rem;
       font-weight: 700;
-      padding: 6px;
+      padding: 6px 4px;
     }
-    .quick-btn {
-      width: 34px; height: 34px;
-      padding: 0;
-      background: rgba(255, 255, 255, 0.06);
-      color: var(--text-main);
-      border-radius: 8px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.95rem;
-    }
-    .quick-btn:hover { background: rgba(255, 255, 255, 0.15); }
 
     .diff-badge {
       font-family: 'JetBrains Mono', monospace;
@@ -222,7 +227,7 @@
     .diff-surplus { background: rgba(0, 242, 254, 0.12); color: var(--accent); border: 1px solid rgba(0, 242, 254, 0.3); }
     .diff-ok { background: var(--success-bg); color: var(--success); }
 
-    /* Мобильный список карточек (скрыт на десктопе) */
+    /* Мобильные карточки */
     .mobile-cards { display: none; gap: 10px; flex-direction: column; }
 
     .item-card {
@@ -232,7 +237,8 @@
       padding: 12px;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
+      transition: border-color 0.2s;
     }
     .item-card.has-deficit { border-color: rgba(255, 59, 105, 0.35); background: rgba(255, 59, 105, 0.05); }
     .item-card.has-surplus { border-color: rgba(0, 242, 254, 0.35); background: rgba(0, 242, 254, 0.05); }
@@ -259,12 +265,12 @@
       color: #fff;
       line-height: 1.25;
     }
+
     .card-bottom {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      margin-top: 4px;
-      gap: 8px;
+      align-items: flex-end;
+      gap: 10px;
     }
     .card-stock {
       display: flex;
@@ -278,29 +284,29 @@
       font-weight: 600;
     }
 
-    /* Адаптивность для экранов смартфонов (меньше 768px) */
+    .total-pill {
+      font-size: 0.8rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
     @media (max-width: 768px) {
       .auth-grid { grid-template-columns: 1fr; }
       .desktop-table-wrapper { display: none; }
       .mobile-cards { display: flex; }
       header { flex-direction: column; align-items: stretch; }
       .btn-report { width: 100%; height: 42px; font-size: 0.95rem; }
-      .fact-input { width: 70px; height: 38px; font-size: 1.15rem; }
-      .quick-btn { width: 40px; height: 38px; font-size: 1.1rem; }
+      .fact-input { width: 62px; height: 42px; font-size: 1.15rem; }
     }
 
     .toast {
       position: fixed;
-      bottom: 16px;
-      right: 16px;
-      left: 16px;
+      bottom: 16px; right: 16px; left: 16px;
       text-align: center;
-      background: #00e676;
-      color: #000;
-      padding: 12px;
-      border-radius: 10px;
-      font-weight: 700;
-      display: none;
+      background: #00e676; color: #000;
+      padding: 12px; border-radius: 10px;
+      font-weight: 700; display: none;
       box-shadow: 0 10px 25px rgba(0, 230, 118, 0.4);
       z-index: 1000;
     }
@@ -316,7 +322,7 @@
       </div>
       <div class="brand-text">
         <h1>SMARTSHELL AUDIT</h1>
-        <p>REVISION // MOBILE MATRIX</p>
+        <p>REVISION // BAR & WAREHOUSE</p>
       </div>
     </div>
     <button class="btn-report" onclick="copyTelegramReport()">
@@ -365,16 +371,16 @@
     </select>
   </div>
 
-  <!-- Таблица для ПК -->
+  <!-- ПК: Таблица -->
   <div class="glass-card desktop-table-wrapper" style="padding:0;">
     <table>
       <thead>
         <tr>
           <th>Категория и позиция</th>
-          <th style="width: 100px; text-align: center;">Цена</th>
-          <th style="width: 90px; text-align: center;">Шелл</th>
-          <th style="width: 190px; text-align: center;">Факт</th>
-          <th style="width: 150px; text-align: right;">Разница</th>
+          <th style="width: 80px; text-align: center;">Цена</th>
+          <th style="width: 80px; text-align: center;">Шелл</th>
+          <th style="width: 220px; text-align: center;">Бар + Склад = Факт</th>
+          <th style="width: 140px; text-align: right;">Разница</th>
         </tr>
       </thead>
       <tbody id="desktopTableBody">
@@ -383,7 +389,7 @@
     </table>
   </div>
 
-  <!-- Карточки для Смартфона -->
+  <!-- Смартфон: Карточки -->
   <div class="mobile-cards" id="mobileCardsContainer">
     <div style="text-align: center; color: var(--text-muted); padding: 30px;">Нажмите «Загрузить склад» для начала</div>
   </div>
@@ -436,9 +442,11 @@
       const data = await goodsRes.json();
       if (!goodsRes.ok) throw new Error(data.error || 'Ошибка получения товаров');
 
+      // Инициализируем раздельный факт: bar (бар) и wh (склад)
       goodsData = data.map(item => ({
         ...item,
-        actual: ''
+        bar: '',
+        wh: ''
       }));
 
       updateCategories();
@@ -461,43 +469,83 @@
     });
   }
 
-  function setQuickFact(id, mode) {
+  // Обновление факта без перерисовки всей страницы (клавиатура не закрывается!)
+  function updateItemFact(id, field, value) {
     const item = goodsData.find(g => g.id === id);
     if (!item) return;
 
-    if (mode === 'EQUAL') {
-      item.actual = item.amount;
-    } else if (mode === 'PLUS') {
-      const cur = item.actual === '' ? item.amount : Number(item.actual);
-      item.actual = cur + 1;
-    } else if (mode === 'MINUS') {
-      const cur = item.actual === '' ? item.amount : Number(item.actual);
-      item.actual = Math.max(0, cur - 1);
+    item[field] = value === '' ? '' : Number(value);
+
+    // Синхронизируем инпуты между десктопом и мобильным видом
+    const selector = `input[data-id="${id}"][data-field="${field}"]`;
+    document.querySelectorAll(selector).forEach(input => {
+      if (input !== document.activeElement) {
+        input.value = item[field];
+      }
+    });
+
+    // Локально обновляем бейджи разницы и цвета карточки
+    updateSingleItemDisplay(item);
+    updateStats();
+  }
+
+  function getItemTotalFact(item) {
+    if (item.bar === '' && item.wh === '') return null;
+    return (Number(item.bar) || 0) + (Number(item.wh) || 0);
+  }
+
+  function updateSingleItemDisplay(item) {
+    const total = getItemTotalFact(item);
+    const hasFact = (total !== null);
+    const diff = hasFact ? (total - item.amount) : 0;
+
+    let badgeHtml = '<span style="color:var(--text-muted);font-size:0.85rem;">—</span>';
+    let cardClass = 'item-card';
+
+    if (hasFact) {
+      if (diff === 0) {
+        badgeHtml = '<span class="diff-badge diff-ok">✓ Норма</span>';
+        cardClass += ' has-ok';
+      } else if (diff < 0) {
+        badgeHtml = `<span class="diff-badge diff-deficit">${diff} шт (${diff * item.cost} ₽)</span>`;
+        cardClass += ' has-deficit';
+      } else {
+        badgeHtml = `<span class="diff-badge diff-surplus">+${diff} шт (+${diff * item.cost} ₽)</span>`;
+        cardClass += ' has-surplus';
+      }
     }
-    renderTable(false);
-    updateStats();
+
+    // Обновляем разницу в таблице десктопа
+    const desktopDiff = document.getElementById(`diff-desktop-${item.id}`);
+    if (desktopDiff) desktopDiff.innerHTML = badgeHtml;
+
+    // Обновляем разницу и сумму факта в мобильной карточке
+    const mobileDiff = document.getElementById(`diff-mobile-${item.id}`);
+    if (mobileDiff) mobileDiff.innerHTML = badgeHtml;
+
+    const mobileTotal = document.getElementById(`total-mobile-${item.id}`);
+    if (mobileTotal) {
+      mobileTotal.innerHTML = hasFact ? `Факт: <b>${total} шт</b>` : `Факт: —`;
+    }
+
+    const card = document.getElementById(`card-${item.id}`);
+    if (card) {
+      card.className = cardClass;
+    }
   }
 
-  function onFactChange(id, value) {
-    const item = goodsData.find(g => g.id === id);
-    if (!item) return;
-    item.actual = value === '' ? '' : Number(value);
-    renderTable(false);
-    updateStats();
-  }
-
-  function handleInputKeydown(e, currentIndex) {
+  function handleDesktopEnter(e, nextSelector) {
     if (e.key === 'Enter') {
       e.preventDefault();
-      const inputs = Array.from(document.querySelectorAll('.fact-input'));
-      if (currentIndex + 1 < inputs.length) {
-        inputs[currentIndex + 1].focus();
-        inputs[currentIndex + 1].select();
+      const nextInput = document.querySelector(nextSelector);
+      if (nextInput) {
+        nextInput.focus();
+        nextInput.select();
       }
     }
   }
 
-  function renderTable(full = true) {
+  function renderTable() {
     const search = document.getElementById('searchInput').value.toLowerCase();
     const category = document.getElementById('categoryFilter').value;
     const diffFilter = document.getElementById('diffFilter').value;
@@ -505,27 +553,30 @@
     const filtered = goodsData.filter(g => {
       const matchSearch = g.title.toLowerCase().includes(search);
       const matchCat = category === 'ALL' || g.category === category;
-      const diff = g.actual === '' ? 0 : (g.actual - g.amount);
+      const total = getItemTotalFact(g);
+      const hasFact = (total !== null);
+      const diff = hasFact ? (total - g.amount) : 0;
 
       let matchDiff = true;
-      if (diffFilter === 'DIFF') matchDiff = (g.actual !== '' && diff !== 0);
-      if (diffFilter === 'DEFICIT') matchDiff = (g.actual !== '' && diff < 0);
-      if (diffFilter === 'UNCHECKED') matchDiff = (g.actual === '');
+      if (diffFilter === 'DIFF') matchDiff = (hasFact && diff !== 0);
+      if (diffFilter === 'DEFICIT') matchDiff = (hasFact && diff < 0);
+      if (diffFilter === 'UNCHECKED') matchDiff = !hasFact;
 
       return matchSearch && matchCat && matchDiff;
     });
 
-    // 1. Рендер для ПК (Таблица)
+    // Рендер таблицы Десктопа
     const desktopBody = document.getElementById('desktopTableBody');
     desktopBody.innerHTML = filtered.map((item, index) => {
-      const hasActual = item.actual !== '';
-      const diff = hasActual ? (item.actual - item.amount) : 0;
-      let diffHtml = '<span style="color:var(--text-muted);font-size:0.85rem;">—</span>';
+      const total = getItemTotalFact(item);
+      const hasFact = (total !== null);
+      const diff = hasFact ? (total - item.amount) : 0;
 
-      if (hasActual) {
-        if (diff === 0) diffHtml = '<span class="diff-badge diff-ok">✓ Норма</span>';
-        else if (diff < 0) diffHtml = `<span class="diff-badge diff-deficit">${diff} шт (${diff * item.cost} ₽)</span>`;
-        else diffHtml = `<span class="diff-badge diff-surplus">+${diff} шт (+${diff * item.cost} ₽)</span>`;
+      let badgeHtml = '<span style="color:var(--text-muted);font-size:0.85rem;">—</span>';
+      if (hasFact) {
+        if (diff === 0) badgeHtml = '<span class="diff-badge diff-ok">✓ Норма</span>';
+        else if (diff < 0) badgeHtml = `<span class="diff-badge diff-deficit">${diff} шт (${diff * item.cost} ₽)</span>`;
+        else badgeHtml = `<span class="diff-badge diff-surplus">+${diff} шт (+${diff * item.cost} ₽)</span>`;
       }
 
       return `
@@ -537,46 +588,61 @@
           <td style="text-align: center; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">${item.cost} ₽</td>
           <td style="text-align: center;"><span class="stock-badge">${item.amount}</span></td>
           <td style="text-align: center;">
-            <div class="fact-control">
-              <button class="quick-btn" title="Совпадает" onclick="setQuickFact(${item.id}, 'EQUAL')">✓</button>
-              <button class="quick-btn" onclick="setQuickFact(${item.id}, 'MINUS')">−</button>
-              <input type="number" class="fact-input" value="${item.actual !== '' ? item.actual : ''}" placeholder="—" onkeydown="handleInputKeydown(event, ${index})" oninput="onFactChange(${item.id}, this.value)">
-              <button class="quick-btn" onclick="setQuickFact(${item.id}, 'PLUS')">+</button>
+            <div class="dual-inputs">
+              <div class="dual-box">
+                <span class="dual-label bar">Бар</span>
+                <input type="number" 
+                       class="fact-input" 
+                       data-id="${item.id}" data-field="bar" 
+                       value="${item.bar}" placeholder="0" 
+                       oninput="updateItemFact(${item.id}, 'bar', this.value)">
+              </div>
+              <span style="color:var(--text-muted); padding-top:14px;">+</span>
+              <div class="dual-box">
+                <span class="dual-label wh">Склад</span>
+                <input type="number" 
+                       class="fact-input" 
+                       data-id="${item.id}" data-field="wh" 
+                       value="${item.wh}" placeholder="0" 
+                       oninput="updateItemFact(${item.id}, 'wh', this.value)">
+              </div>
             </div>
           </td>
-          <td style="text-align: right;">${diffHtml}</td>
+          <td style="text-align: right;" id="diff-desktop-${item.id}">${badgeHtml}</td>
         </tr>
       `;
     }).join('');
 
-    // 2. Рендер для Смартфона (Карточки)
+    // Рендер карточек Мобильного
     const mobileContainer = document.getElementById('mobileCardsContainer');
-    mobileContainer.innerHTML = filtered.map((item, index) => {
-      const hasActual = item.actual !== '';
-      const diff = hasActual ? (item.actual - item.amount) : 0;
-      let cardStatusClass = '';
-      let diffHtml = '';
+    mobileContainer.innerHTML = filtered.map(item => {
+      const total = getItemTotalFact(item);
+      const hasFact = (total !== null);
+      const diff = hasFact ? (total - item.amount) : 0;
 
-      if (hasActual) {
+      let cardClass = 'item-card';
+      let badgeHtml = '';
+
+      if (hasFact) {
         if (diff === 0) {
-          cardStatusClass = 'has-ok';
-          diffHtml = '<span class="diff-badge diff-ok">✓ Сошлось</span>';
+          cardClass += ' has-ok';
+          badgeHtml = '<span class="diff-badge diff-ok">✓ Сошлось</span>';
         } else if (diff < 0) {
-          cardStatusClass = 'has-deficit';
-          diffHtml = `<span class="diff-badge diff-deficit">${diff} шт (${diff * item.cost} ₽)</span>`;
+          cardClass += ' has-deficit';
+          badgeHtml = `<span class="diff-badge diff-deficit">${diff} шт (${diff * item.cost} ₽)</span>`;
         } else {
-          cardStatusClass = 'has-surplus';
-          diffHtml = `<span class="diff-badge diff-surplus">+${diff} шт (+${diff * item.cost} ₽)</span>`;
+          cardClass += ' has-surplus';
+          badgeHtml = `<span class="diff-badge diff-surplus">+${diff} шт (+${diff * item.cost} ₽)</span>`;
         }
       }
 
       return `
-        <div class="item-card ${cardStatusClass}">
+        <div class="${cardClass}" id="card-${item.id}">
           <div class="card-top">
             <span class="item-category">${item.category}</span>
             <div class="card-meta">
               <span class="card-price">${item.cost} ₽</span>
-              ${diffHtml}
+              <span id="diff-mobile-${item.id}">${badgeHtml}</span>
             </div>
           </div>
           <div class="card-title">${item.title}</div>
@@ -584,12 +650,30 @@
             <div class="card-stock">
               <span class="card-stock-label">Остаток Шелл</span>
               <span class="stock-badge">${item.amount} шт</span>
+              <span class="total-pill" id="total-mobile-${item.id}">
+                ${hasFact ? `Факт: <b>${total} шт</b>` : `Факт: —`}
+              </span>
             </div>
-            <div class="fact-control">
-              <button class="quick-btn" title="Совпадает" onclick="setQuickFact(${item.id}, 'EQUAL')">✓</button>
-              <button class="quick-btn" onclick="setQuickFact(${item.id}, 'MINUS')">−</button>
-              <input type="number" class="fact-input" value="${item.actual !== '' ? item.actual : ''}" placeholder="—" oninput="onFactChange(${item.id}, this.value)">
-              <button class="quick-btn" onclick="setQuickFact(${item.id}, 'PLUS')">+</button>
+            <div class="dual-inputs">
+              <div class="dual-box">
+                <span class="dual-label bar">Бар</span>
+                <input type="number" 
+                       class="fact-input" 
+                       inputmode="numeric"
+                       data-id="${item.id}" data-field="bar" 
+                       value="${item.bar}" placeholder="0" 
+                       oninput="updateItemFact(${item.id}, 'bar', this.value)">
+              </div>
+              <span style="color:var(--text-muted); font-size:1.1rem; padding-bottom:6px;">+</span>
+              <div class="dual-box">
+                <span class="dual-label wh">Склад</span>
+                <input type="number" 
+                       class="fact-input" 
+                       inputmode="numeric"
+                       data-id="${item.id}" data-field="wh" 
+                       value="${item.wh}" placeholder="0" 
+                       oninput="updateItemFact(${item.id}, 'wh', this.value)">
+              </div>
             </div>
           </div>
         </div>
@@ -603,9 +687,10 @@
     let surplusSum = 0;
 
     goodsData.forEach(g => {
-      if (g.actual !== '') {
+      const total = getItemTotalFact(g);
+      if (total !== null) {
         checkedCount++;
-        const diff = g.actual - g.amount;
+        const diff = total - g.amount;
         if (diff < 0) deficitSum += Math.abs(diff) * g.cost;
         if (diff > 0) surplusSum += diff * g.cost;
       }
@@ -628,13 +713,17 @@
     let totalDeficit = 0;
 
     goodsData.forEach(g => {
-      if (g.actual !== '') {
-        const diff = g.actual - g.amount;
+      const total = getItemTotalFact(g);
+      if (total !== null) {
+        const diff = total - g.amount;
+        const b = g.bar === '' ? 0 : g.bar;
+        const w = g.wh === '' ? 0 : g.wh;
+
         if (diff < 0) {
-          deficits.push(`🔴 ${g.title}: ${diff} шт (${diff * g.cost} ₽)`);
+          deficits.push(`🔴 ${g.title}: ${diff} шт (${diff * g.cost} ₽)\n   └ Бар: ${b} | Склад: ${w} (Факт: ${total} / Шелл: ${g.amount})`);
           totalDeficit += Math.abs(diff) * g.cost;
         } else if (diff > 0) {
-          surpluses.push(`🔵 ${g.title}: +${diff} шт (+${diff * g.cost} ₽)`);
+          surpluses.push(`🔵 ${g.title}: +${diff} шт (+${diff * g.cost} ₽)\n   └ Бар: ${b} | Склад: ${w} (Факт: ${total} / Шелл: ${g.amount})`);
         }
       }
     });
@@ -643,10 +732,10 @@
       report += `✅ *Все позиции сходятся, недостач нет!*\n`;
     } else {
       if (deficits.length > 0) {
-        report += `*Недостачи:*\n${deficits.join('\n')}\n\n`;
+        report += `*Недостачи:*\n${deficits.join('\n\n')}\n\n`;
       }
       if (surpluses.length > 0) {
-        report += `*Излишки:*\n${surpluses.join('\n')}\n\n`;
+        report += `*Излишки:*\n${surpluses.join('\n\n')}\n\n`;
       }
       report += `━━━━━━━━━━━━━━━━━━━━━\n`;
       report += `*ИТОГОВАЯ СУММА НЕДОСТАЧИ:* -${totalDeficit} ₽\n`;
