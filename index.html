@@ -442,7 +442,6 @@
       const data = await goodsRes.json();
       if (!goodsRes.ok) throw new Error(data.error || 'Ошибка получения товаров');
 
-      // Инициализируем раздельный факт: bar (бар) и wh (склад)
       goodsData = data.map(item => ({
         ...item,
         bar: '',
@@ -469,14 +468,12 @@
     });
   }
 
-  // Обновление факта без перерисовки всей страницы (клавиатура не закрывается!)
   function updateItemFact(id, field, value) {
     const item = goodsData.find(g => g.id === id);
     if (!item) return;
 
     item[field] = value === '' ? '' : Number(value);
 
-    // Синхронизируем инпуты между десктопом и мобильным видом
     const selector = `input[data-id="${id}"][data-field="${field}"]`;
     document.querySelectorAll(selector).forEach(input => {
       if (input !== document.activeElement) {
@@ -484,7 +481,6 @@
       }
     });
 
-    // Локально обновляем бейджи разницы и цвета карточки
     updateSingleItemDisplay(item);
     updateStats();
   }
@@ -515,11 +511,9 @@
       }
     }
 
-    // Обновляем разницу в таблице десктопа
     const desktopDiff = document.getElementById(`diff-desktop-${item.id}`);
     if (desktopDiff) desktopDiff.innerHTML = badgeHtml;
 
-    // Обновляем разницу и сумму факта в мобильной карточке
     const mobileDiff = document.getElementById(`diff-mobile-${item.id}`);
     if (mobileDiff) mobileDiff.innerHTML = badgeHtml;
 
@@ -531,17 +525,6 @@
     const card = document.getElementById(`card-${item.id}`);
     if (card) {
       card.className = cardClass;
-    }
-  }
-
-  function handleDesktopEnter(e, nextSelector) {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      const nextInput = document.querySelector(nextSelector);
-      if (nextInput) {
-        nextInput.focus();
-        nextInput.select();
-      }
     }
   }
 
@@ -565,9 +548,9 @@
       return matchSearch && matchCat && matchDiff;
     });
 
-    // Рендер таблицы Десктопа
+    // Десктопная таблица
     const desktopBody = document.getElementById('desktopTableBody');
-    desktopBody.innerHTML = filtered.map((item, index) => {
+    desktopBody.innerHTML = filtered.map(item => {
       const total = getItemTotalFact(item);
       const hasFact = (total !== null);
       const diff = hasFact ? (total - item.amount) : 0;
@@ -613,7 +596,7 @@
       `;
     }).join('');
 
-    // Рендер карточек Мобильного
+    // Мобильные карточки
     const mobileContainer = document.getElementById('mobileCardsContainer');
     mobileContainer.innerHTML = filtered.map(item => {
       const total = getItemTotalFact(item);
@@ -705,8 +688,7 @@
     const now = new Date();
     const dateStr = now.toLocaleDateString('ru-RU') + ' ' + now.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'});
 
-    let report = `📊 *РЕВИЗИЯ БАРА // ${dateStr}*\n`;
-    report += `━━━━━━━━━━━━━━━━━━━━━\n\n`;
+    let report = `Отчёт по смене (${dateStr})\n\n`;
 
     const deficits = [];
     const surpluses = [];
@@ -716,29 +698,27 @@
       const total = getItemTotalFact(g);
       if (total !== null) {
         const diff = total - g.amount;
-        const b = g.bar === '' ? 0 : g.bar;
-        const w = g.wh === '' ? 0 : g.wh;
+        const sum = Math.abs(diff) * g.cost;
 
         if (diff < 0) {
-          deficits.push(`🔴 ${g.title}: ${diff} шт (${diff * g.cost} ₽)\n   └ Бар: ${b} | Склад: ${w} (Факт: ${total} / Шелл: ${g.amount})`);
-          totalDeficit += Math.abs(diff) * g.cost;
+          deficits.push(`${g.title} - ${Math.abs(diff)} шт.\nНа сумму: ${sum} ₽`);
+          totalDeficit += sum;
         } else if (diff > 0) {
-          surpluses.push(`🔵 ${g.title}: +${diff} шт (+${diff * g.cost} ₽)\n   └ Бар: ${b} | Склад: ${w} (Факт: ${total} / Шелл: ${g.amount})`);
+          surpluses.push(`${g.title} + ${diff} шт.\nНа сумму: ${sum} ₽`);
         }
       }
     });
 
     if (deficits.length === 0 && surpluses.length === 0) {
-      report += `✅ *Все позиции сходятся, недостач нет!*\n`;
+      report += `Все позиции сходятся, расхождений нет.\n`;
     } else {
       if (deficits.length > 0) {
-        report += `*Недостачи:*\n${deficits.join('\n\n')}\n\n`;
+        report += `Недостача:\n${deficits.join('\n\n')}\n\n`;
       }
       if (surpluses.length > 0) {
-        report += `*Излишки:*\n${surpluses.join('\n\n')}\n\n`;
+        report += `Излишки:\n${surpluses.join('\n\n')}\n\n`;
       }
-      report += `━━━━━━━━━━━━━━━━━━━━━\n`;
-      report += `*ИТОГОВАЯ СУММА НЕДОСТАЧИ:* -${totalDeficit} ₽\n`;
+      report += `Итоговая недостача: ${totalDeficit} ₽\n`;
     }
 
     navigator.clipboard.writeText(report).then(() => {
