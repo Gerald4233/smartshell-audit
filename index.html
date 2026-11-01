@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartShell Ревизия</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --text-dim: #94a3b8;
+      --accent: #38bdf8;
+      --danger: #ef4444;
+      --success: #22c55e;
+      --warning: #f59e0b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); min-height: 100vh; padding: 16px; }
+    .container { max-width: 900px; margin: 0 auto; }
+    
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+    h1 { font-size: 1.4rem; color: var(--accent); }
+    
+    .panel { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 16px; }
+    .auth-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) 120px; gap: 8px; align-items: center; }
+    
+    input, select, button {
+      background: #090d16; border: 1px solid var(--border); color: var(--text);
+      padding: 8px 12px; border-radius: 6px; font-size: 0.95rem; outline: none;
+    }
+    input:focus, select:focus { border-color: var(--accent); }
+    
+    button { cursor: pointer; font-weight: 600; background: var(--accent); color: #000; border: none; transition: opacity 0.2s; }
+    button:hover { opacity: 0.9; }
+    button.btn-secondary { background: var(--border); color: var(--text); }
+    button.btn-success { background: var(--success); color: #000; }
+
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 16px; }
+    .stat-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px; text-align: center; }
+    .stat-card .val { font-size: 1.3rem; font-weight: bold; margin-top: 4px; }
+    .val.red { color: var(--danger); }
+    .val.green { color: var(--success); }
+    .val.blue { color: var(--accent); }
+
+    .controls { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+    .controls input[type="text"] { flex: 1; min-width: 180px; }
+
+    .items-table { width: 100%; border-collapse: collapse; }
+    .items-table th, .items-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: left; }
+    .items-table th { color: var(--text-dim); font-size: 0.8rem; text-transform: uppercase; }
+    
+    .row-ok { background: rgba(34, 197, 94, 0.04); }
+    .row-deficit { background: rgba(239, 68, 68, 0.12); }
+    .row-surplus { background: rgba(56, 189, 248, 0.12); }
+
+    .qty-input { width: 75px; text-align: center; font-weight: bold; font-size: 1.1rem; }
+    .tag { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; background: var(--border); color: var(--text-dim); }
+    
+    .toast { position: fixed; bottom: 20px; right: 20px; background: var(--success); color: #000; padding: 10px 18px; border-radius: 6px; font-weight: bold; display: none; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>SmartShell Сверка Склада</h1>
+    <div>
+      <button class="btn-success" id="exportBtn" onclick="copyTelegramReport()">Скопировать отчет</button>
+    </div>
+  </header>
+
+  <!-- Блок авторизации -->
+  <div class="panel">
+    <div class="auth-row">
+      <input type="text" id="workerUrl" placeholder="URL воркера" value="https://smartshell-bridge.ruslan12rudan.workers.dev">
+      <input type="text" id="loginInput" placeholder="Логин (телефон)">
+      <input type="password" id="passInput" placeholder="Пароль">
+      <button onclick="fetchStock()">Загрузить</button>
+    </div>
+  </div>
+
+  <!-- Статистика смены -->
+  <div class="stats">
+    <div class="stat-card">
+      <div style="font-size:0.75rem; color:var(--text-dim)">Товаров пересчитано</div>
+      <div class="val" id="statChecked">0 / 0</div>
+    </div>
+    <div class="stat-card">
+      <div style="font-size:0.75rem; color:var(--text-dim)">Недостача</div>
+      <div class="val red" id="statDeficit">0 ₽</div>
+    </div>
+    <div class="stat-card">
+      <div style="font-size:0.75rem; color:var(--text-dim)">Излишек</div>
+      <div class="val blue" id="statSurplus">0 ₽</div>
+    </div>
+  </div>
+
+  <!-- Фильтры -->
+  <div class="controls">
+    <input type="text" id="searchInput" placeholder="Поиск товара (/)..." oninput="renderTable()">
+    <select id="categoryFilter" onchange="renderTable()">
+      <option value="ALL">Все категории</option>
+    </select>
+    <select id="diffFilter" onchange="renderTable()">
+      <option value="ALL">Все позиции</option>
+      <option value="DIFF">Только расхождения</option>
+      <option value="DEFICIT">Только недостачи</option>
+    </select>
+  </div>
+
+  <!-- Таблица товаров -->
+  <div class="panel" style="padding: 0; overflow-x: auto;">
+    <table class="items-table">
+      <thead>
+        <tr>
+          <th>Категория / Название</th>
+          <th style="width: 80px; text-align: center;">Цена</th>
+          <th style="width: 80px; text-align: center;">Шелл</th>
+          <th style="width: 100px; text-align: center;">Факт</th>
+          <th style="width: 110px; text-align: right;">Разница</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <tr><td colspan="5" style="text-align: center; color: var(--text-dim); padding: 30px;">Нажмите «Загрузить», чтобы получить остатки из SmartShell</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="toast" id="toast">Отчет скопирован в буфер!</div>
+
+<script>
+  let goodsData = [];
+
+  // Загрузка сохраненных данных авторизации
+  window.addEventListener('DOMContentLoaded', () => {
+    if (localStorage.getItem('ss_worker')) document.getElementById('workerUrl').value = localStorage.getItem('ss_worker');
+    if (localStorage.getItem('ss_login')) document.getElementById('loginInput').value = localStorage.getItem('ss_login');
+    if (localStorage.getItem('ss_pass')) document.getElementById('passInput').value = localStorage.getItem('ss_pass');
+
+    // Хоткей фокуса на поиск: "/"
+    window.addEventListener('keydown', (e) => {
+      if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
+        e.preventDefault();
+        document.getElementById('searchInput').focus();
+      }
+    });
+  });
+
+  async function fetchStock() {
+    const workerUrl = document.getElementById('workerUrl').value.trim();
+    const login = document.getElementById('loginInput').value.trim();
+    const password = document.getElementById('passInput').value.trim();
+
+    localStorage.setItem('ss_worker', workerUrl);
+    localStorage.setItem('ss_login', login);
+    localStorage.setItem('ss_pass', password);
+
+    const tbody = document.getElementById('tableBody');
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 30px;">Запрос к SmartShell...</td></tr>';
+
+    try {
+      // 1. Получаем токен
+      const loginRes = await fetch(`${workerUrl}/api/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ login, password, company_id: 6682 })
+      });
+      const loginData = await loginRes.json();
+      if (!loginRes.ok) throw new Error(loginData.error || 'Ошибка входа');
+
+      const token = loginData.token;
+
+      // 2. Получаем товары
+      const goodsRes = await fetch(`${workerUrl}/api/goods`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await goodsRes.json();
+      if (!goodsRes.ok) throw new Error(data.error || 'Ошибка получения товаров');
+
+      // Инициализируем факт (по умолчанию пустая строка или остаток)
+      goodsData = data.map(item => ({
+        ...item,
+        actual: '' // пользователь заполняет руками
+      }));
+
+      updateCategories();
+      renderTable();
+      updateStats();
+
+    } catch (err) {
+      alert("Ошибка: " + err.message);
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--danger); padding: 30px;">${err.message}</td></tr>`;
+    }
+  }
+
+  function updateCategories() {
+    const categories = Array.from(new Set(goodsData.map(g => g.category)));
+    const select = document.getElementById('categoryFilter');
+    select.innerHTML = '<option value="ALL">Все категории</option>';
+    categories.forEach(cat => {
+      select.innerHTML += `<option value="${cat}">${cat}</option>`;
+    });
+  }
+
+  function onFactChange(id, value) {
+    const item = goodsData.find(g => g.id === id);
+    if (!item) return;
+    item.actual = value === '' ? '' : Number(value);
+    renderTable(false);
+    updateStats();
+  }
+
+  function handleInputKeydown(e, currentIndex) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const inputs = Array.from(document.querySelectorAll('.qty-input'));
+      if (currentIndex + 1 < inputs.length) {
+        inputs[currentIndex + 1].focus();
+        inputs[currentIndex + 1].select();
+      }
+    }
+  }
+
+  function renderTable(full = true) {
+    const tbody = document.getElementById('tableBody');
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const category = document.getElementById('categoryFilter').value;
+    const diffFilter = document.getElementById('diffFilter').value;
+
+    const filtered = goodsData.filter(g => {
+      const matchSearch = g.title.toLowerCase().includes(search);
+      const matchCat = category === 'ALL' || g.category === category;
+      const diff = g.actual === '' ? 0 : (g.actual - g.amount);
+
+      let matchDiff = true;
+      if (diffFilter === 'DIFF') matchDiff = (g.actual !== '' && diff !== 0);
+      if (diffFilter === 'DEFICIT') matchDiff = (g.actual !== '' && diff < 0);
+
+      return matchSearch && matchCat && matchDiff;
+    });
+
+    tbody.innerHTML = filtered.map((item, index) => {
+      const hasActual = item.actual !== '';
+      const diff = hasActual ? (item.actual - item.amount) : 0;
+      let rowClass = '';
+      let diffText = '—';
+
+      if (hasActual) {
+        if (diff === 0) {
+          rowClass = 'row-ok';
+          diffText = '<span style="color:var(--success)">✓ Норма</span>';
+        } else if (diff < 0) {
+          rowClass = 'row-deficit';
+          diffText = `<b style="color:var(--danger)">${diff} шт (${diff * item.cost} ₽)</b>`;
+        } else {
+          rowClass = 'row-surplus';
+          diffText = `<b style="color:var(--accent)">+${diff} шт (+${diff * item.cost} ₽)</b>`;
+        }
+      }
+
+      return `
+        <tr class="${rowClass}">
+          <td>
+            <span class="tag">${item.category}</span>
+            <div style="font-weight: 600; margin-top: 2px;">${item.title}</div>
+          </td>
+          <td style="text-align: center; color: var(--text-dim);">${item.cost} ₽</td>
+          <td style="text-align: center; font-weight: bold;">${item.amount}</td>
+          <td style="text-align: center;">
+            <input type="number" 
+                   class="qty-input" 
+                   value="${item.actual !== '' ? item.actual : ''}" 
+                   placeholder="0"
+                   onkeydown="handleInputKeydown(event, ${index})"
+                   oninput="onFactChange(${item.id}, this.value)">
+          </td>
+          <td style="text-align: right;">${diffText}</td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function updateStats() {
+    let checkedCount = 0;
+    let deficitSum = 0;
+    let surplusSum = 0;
+
+    goodsData.forEach(g => {
+      if (g.actual !== '') {
+        checkedCount++;
+        const diff = g.actual - g.amount;
+        if (diff < 0) deficitSum += Math.abs(diff) * g.cost;
+        if (diff > 0) surplusSum += diff * g.cost;
+      }
+    });
+
+    document.getElementById('statChecked').innerText = `${checkedCount} / ${goodsData.length}`;
+    document.getElementById('statDeficit').innerText = `-${deficitSum} ₽`;
+    document.getElementById('statSurplus').innerText = `+${surplusSum} ₽`;
+  }
+
+  function copyTelegramReport() {
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('ru-RU') + ' ' + now.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'});
+
+    let report = `📦 *Ревизия бара/товара (${dateStr})*\n\n`;
+
+    const deficits = [];
+    const surpluses = [];
+    let totalDeficit = 0;
+
+    goodsData.forEach(g => {
+      if (g.actual !== '') {
+        const diff = g.actual - g.amount;
+        if (diff < 0) {
+          deficits.push(`❌ ${g.title}: ${diff} шт (${diff * g.cost} ₽)`);
+          totalDeficit += Math.abs(diff) * g.cost;
+        } else if (diff > 0) {
+          surpluses.push(`🔹 ${g.title}: +${diff} шт (+${diff * g.cost} ₽)`);
+        }
+      }
+    });
+
+    if (deficits.length === 0 && surpluses.length === 0) {
+      report += `✅ Все позиции сходятся, расхождений нет.\n`;
+    } else {
+      if (deficits.length > 0) {
+        report += `*Недостачи:*\n${deficits.join('\n')}\n\n`;
+      }
+      if (surpluses.length > 0) {
+        report += `*Излишки:*\n${surpluses.join('\n')}\n\n`;
+      }
+      report += `*Итоговая недостача:* -${totalDeficit} ₽\n`;
+    }
+
+    navigator.clipboard.writeText(report).then(() => {
+      const toast = document.getElementById('toast');
+      toast.style.display = 'block';
+      setTimeout(() => { toast.style.display = 'none'; }, 2000);
+    });
+  }
+</script>
+</body>
+</html>
