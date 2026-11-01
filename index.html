@@ -3,144 +3,382 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SmartShell Ревизия</title>
+  <title>SmartShell • Сверка склада</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0f172a;
-      --card-bg: #1e293b;
-      --border: #334155;
-      --text: #f8fafc;
-      --text-dim: #94a3b8;
-      --accent: #38bdf8;
-      --danger: #ef4444;
-      --success: #22c55e;
-      --warning: #f59e0b;
+      --bg: #090c14;
+      --card-bg: rgba(18, 24, 38, 0.7);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --card-hover: rgba(255, 255, 255, 0.12);
+      --text-main: #f1f5f9;
+      --text-muted: #808ea3;
+      --accent: #00f2fe;
+      --accent-glow: rgba(0, 242, 254, 0.3);
+      --accent-grad: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      --danger: #ff3b69;
+      --danger-bg: rgba(255, 59, 105, 0.12);
+      --success: #00e676;
+      --success-bg: rgba(0, 230, 118, 0.12);
+      --warning: #ffab00;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-    body { background-color: var(--bg); color: var(--text); min-height: 100vh; padding: 16px; }
-    .container { max-width: 900px; margin: 0 auto; }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     
-    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
-    h1 { font-size: 1.4rem; color: var(--accent); }
-    
-    .panel { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 16px; }
-    .auth-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) 120px; gap: 8px; align-items: center; }
-    
-    input, select, button {
-      background: #090d16; border: 1px solid var(--border); color: var(--text);
-      padding: 8px 12px; border-radius: 6px; font-size: 0.95rem; outline: none;
+    body {
+      background-color: var(--bg);
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(0, 242, 254, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 85% 85%, rgba(79, 172, 254, 0.05) 0%, transparent 40%);
+      background-attachment: fixed;
+      color: var(--text-main);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      min-height: 100vh;
+      padding: 24px 16px;
     }
-    input:focus, select:focus { border-color: var(--accent); }
+
+    .container { max-width: 1000px; margin: 0 auto; }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-icon {
+      width: 40px;
+      height: 40px;
+      background: var(--accent-grad);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 20px var(--accent-glow);
+    }
+    .brand-icon svg { width: 22px; height: 22px; fill: #000; }
     
-    button { cursor: pointer; font-weight: 600; background: var(--accent); color: #000; border: none; transition: opacity 0.2s; }
-    button:hover { opacity: 0.9; }
-    button.btn-secondary { background: var(--border); color: var(--text); }
-    button.btn-success { background: var(--success); color: #000; }
+    .brand-text h1 {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(180deg, #fff 0%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .brand-text p { font-size: 0.8rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
 
-    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 16px; }
-    .stat-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px; text-align: center; }
-    .stat-card .val { font-size: 1.3rem; font-weight: bold; margin-top: 4px; }
-    .val.red { color: var(--danger); }
-    .val.green { color: var(--success); }
-    .val.blue { color: var(--accent); }
+    .glass-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 18px;
+      transition: border-color 0.2s;
+    }
+    .glass-card:hover { border-color: var(--card-hover); }
 
-    .controls { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
-    .controls input[type="text"] { flex: 1; min-width: 180px; }
+    .auth-grid {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr 1fr auto;
+      gap: 10px;
+      align-items: center;
+    }
 
-    .items-table { width: 100%; border-collapse: collapse; }
-    .items-table th, .items-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: left; }
-    .items-table th { color: var(--text-dim); font-size: 0.8rem; text-transform: uppercase; }
-    
-    .row-ok { background: rgba(34, 197, 94, 0.04); }
-    .row-deficit { background: rgba(239, 68, 68, 0.12); }
-    .row-surplus { background: rgba(56, 189, 248, 0.12); }
+    @media (max-width: 768px) {
+      .auth-grid { grid-template-columns: 1fr; }
+    }
 
-    .qty-input { width: 75px; text-align: center; font-weight: bold; font-size: 1.1rem; }
-    .tag { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; background: var(--border); color: var(--text-dim); }
-    
-    .toast { position: fixed; bottom: 20px; right: 20px; background: var(--success); color: #000; padding: 10px 18px; border-radius: 6px; font-weight: bold; display: none; }
+    input, select {
+      background: rgba(10, 14, 23, 0.8);
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      outline: none;
+      transition: all 0.2s;
+    }
+    input:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
+
+    button {
+      background: var(--accent-grad);
+      color: #040914;
+      font-weight: 700;
+      font-size: 0.85rem;
+      padding: 10px 18px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: transform 0.15s, box-shadow 0.2s;
+    }
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 20px var(--accent-glow);
+    }
+    button:active { transform: translateY(0); }
+
+    .btn-report {
+      background: linear-gradient(135deg, #00e676 0%, #00b0ff 100%);
+      box-shadow: 0 0 16px rgba(0, 230, 118, 0.25);
+    }
+
+    .stats-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .stat-box {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 14px 16px;
+      position: relative;
+      overflow: hidden;
+    }
+    .stat-box::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; width: 4px; height: 100%;
+      background: var(--accent);
+    }
+    .stat-box.deficit::before { background: var(--danger); }
+    .stat-box.surplus::before { background: var(--accent); }
+    .stat-box.progress::before { background: var(--success); }
+
+    .stat-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); font-weight: 600; }
+    .stat-val { font-size: 1.45rem; font-weight: 800; margin-top: 4px; font-family: 'JetBrains Mono', monospace; }
+    .stat-val.red { color: var(--danger); text-shadow: 0 0 10px rgba(255, 59, 105, 0.3); }
+    .stat-val.blue { color: var(--accent); text-shadow: 0 0 10px var(--accent-glow); }
+    .stat-val.green { color: var(--success); text-shadow: 0 0 10px rgba(0, 230, 118, 0.3); }
+
+    .filters-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .filters-bar input { flex: 1; min-width: 200px; }
+
+    .table-wrapper {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      overflow-x: auto;
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+    th {
+      background: rgba(255, 255, 255, 0.02);
+      padding: 14px 16px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--card-border);
+      text-align: left;
+    }
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+      vertical-align: middle;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover { background: rgba(255, 255, 255, 0.02); }
+
+    .item-category {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--accent);
+      background: rgba(0, 242, 254, 0.08);
+      padding: 2px 8px;
+      border-radius: 6px;
+      display: inline-block;
+      margin-bottom: 4px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .item-title { font-weight: 600; font-size: 0.95rem; color: #fff; }
+
+    .stock-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 0.95rem;
+      padding: 4px 10px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      display: inline-block;
+    }
+
+    .fact-control {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .fact-input {
+      width: 65px;
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.05rem;
+      font-weight: 700;
+      padding: 6px 8px;
+    }
+
+    .quick-btn {
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-main);
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      transition: background 0.15s;
+    }
+    .quick-btn:hover { background: rgba(255, 255, 255, 0.15); box-shadow: none; transform: none; }
+
+    .diff-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 0.85rem;
+      padding: 4px 8px;
+      border-radius: 6px;
+      display: inline-block;
+      white-space: nowrap;
+    }
+    .diff-deficit { background: var(--danger-bg); color: var(--danger); border: 1px solid rgba(255, 59, 105, 0.3); }
+    .diff-surplus { background: rgba(0, 242, 254, 0.12); color: var(--accent); border: 1px solid rgba(0, 242, 254, 0.3); }
+    .diff-ok { background: var(--success-bg); color: var(--success); }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #00e676;
+      color: #000;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      display: none;
+      box-shadow: 0 10px 30px rgba(0, 230, 118, 0.4);
+      z-index: 1000;
+    }
   </style>
 </head>
 <body>
 
 <div class="container">
   <header>
-    <h1>SmartShell Сверка Склада</h1>
-    <div>
-      <button class="btn-success" id="exportBtn" onclick="copyTelegramReport()">Скопировать отчет</button>
+    <div class="brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+      </div>
+      <div class="brand-text">
+        <h1>SMARTSHELL AUDIT</h1>
+        <p>REVISION MATRIX // VER. 2.0</p>
+      </div>
     </div>
+    <button class="btn-report" onclick="copyTelegramReport()">
+      <svg style="width:16px;height:16px;fill:currentColor" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+      Скопировать отчёт в TG
+    </button>
   </header>
 
-  <!-- Блок авторизации -->
-  <div class="panel">
-    <div class="auth-row">
-      <input type="text" id="workerUrl" placeholder="URL воркера" value="https://smartshell-bridge.ruslan12rudan.workers.dev">
+  <!-- Панель входа / API -->
+  <div class="glass-card">
+    <div class="auth-grid">
+      <input type="text" id="workerUrl" placeholder="Cloudflare Worker URL" value="https://smartshell-bridge.ruslan12rudan.workers.dev">
       <input type="text" id="loginInput" placeholder="Логин (телефон)">
       <input type="password" id="passInput" placeholder="Пароль">
-      <button onclick="fetchStock()">Загрузить</button>
+      <button onclick="fetchStock()">
+        <svg style="width:16px;height:16px;fill:currentColor" viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
+        Загрузить склад
+      </button>
     </div>
   </div>
 
   <!-- Статистика смены -->
-  <div class="stats">
-    <div class="stat-card">
-      <div style="font-size:0.75rem; color:var(--text-dim)">Товаров пересчитано</div>
-      <div class="val" id="statChecked">0 / 0</div>
+  <div class="stats-container">
+    <div class="stat-box progress">
+      <div class="stat-label">Прогресс проверки</div>
+      <div class="stat-val green" id="statChecked">0 / 0</div>
     </div>
-    <div class="stat-card">
-      <div style="font-size:0.75rem; color:var(--text-dim)">Недостача</div>
-      <div class="val red" id="statDeficit">0 ₽</div>
+    <div class="stat-box deficit">
+      <div class="stat-label">Недостача</div>
+      <div class="stat-val red" id="statDeficit">0 ₽</div>
     </div>
-    <div class="stat-card">
-      <div style="font-size:0.75rem; color:var(--text-dim)">Излишек</div>
-      <div class="val blue" id="statSurplus">0 ₽</div>
+    <div class="stat-box surplus">
+      <div class="stat-label">Излишек</div>
+      <div class="stat-val blue" id="statSurplus">0 ₽</div>
     </div>
   </div>
 
-  <!-- Фильтры -->
-  <div class="controls">
-    <input type="text" id="searchInput" placeholder="Поиск товара (/)..." oninput="renderTable()">
+  <!-- Панель фильтров -->
+  <div class="filters-bar">
+    <input type="text" id="searchInput" placeholder="Быстрый поиск позиции (клавиша /)..." oninput="renderTable()">
     <select id="categoryFilter" onchange="renderTable()">
       <option value="ALL">Все категории</option>
     </select>
     <select id="diffFilter" onchange="renderTable()">
-      <option value="ALL">Все позиции</option>
-      <option value="DIFF">Только расхождения</option>
-      <option value="DEFICIT">Только недостачи</option>
+      <option value="ALL">Все товары</option>
+      <option value="DIFF">Только расхождения (≠ 0)</option>
+      <option value="DEFICIT">Только недостачи (< 0)</option>
+      <option value="UNCHECKED">Ещё не посчитано</option>
     </select>
   </div>
 
-  <!-- Таблица товаров -->
-  <div class="panel" style="padding: 0; overflow-x: auto;">
-    <table class="items-table">
+  <!-- Сетка товаров -->
+  <div class="table-wrapper">
+    <table>
       <thead>
         <tr>
-          <th>Категория / Название</th>
-          <th style="width: 80px; text-align: center;">Цена</th>
-          <th style="width: 80px; text-align: center;">Шелл</th>
-          <th style="width: 100px; text-align: center;">Факт</th>
-          <th style="width: 110px; text-align: right;">Разница</th>
+          <th>Категория и позиция</th>
+          <th style="width: 100px; text-align: center;">Цена</th>
+          <th style="width: 90px; text-align: center;">Шелл</th>
+          <th style="width: 190px; text-align: center;">Факт</th>
+          <th style="width: 150px; text-align: right;">Разница</th>
         </tr>
       </thead>
       <tbody id="tableBody">
-        <tr><td colspan="5" style="text-align: center; color: var(--text-dim); padding: 30px;">Нажмите «Загрузить», чтобы получить остатки из SmartShell</td></tr>
+        <tr>
+          <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 48px;">
+            Введите данные и нажмите «Загрузить склад» для инициализации
+          </td>
+        </tr>
       </tbody>
     </table>
   </div>
 </div>
 
-<div class="toast" id="toast">Отчет скопирован в буфер!</div>
+<div class="toast" id="toast">✓ Отчёт сформирован и скопирован в буфер!</div>
 
 <script>
   let goodsData = [];
 
-  // Загрузка сохраненных данных авторизации
   window.addEventListener('DOMContentLoaded', () => {
     if (localStorage.getItem('ss_worker')) document.getElementById('workerUrl').value = localStorage.getItem('ss_worker');
     if (localStorage.getItem('ss_login')) document.getElementById('loginInput').value = localStorage.getItem('ss_login');
     if (localStorage.getItem('ss_pass')) document.getElementById('passInput').value = localStorage.getItem('ss_pass');
 
-    // Хоткей фокуса на поиск: "/"
     window.addEventListener('keydown', (e) => {
       if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
         e.preventDefault();
@@ -159,10 +397,9 @@
     localStorage.setItem('ss_pass', password);
 
     const tbody = document.getElementById('tableBody');
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 30px;">Запрос к SmartShell...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 48px; color: var(--accent);">Синхронизация со SmartShell API...</td></tr>';
 
     try {
-      // 1. Получаем токен
       const loginRes = await fetch(`${workerUrl}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -173,17 +410,15 @@
 
       const token = loginData.token;
 
-      // 2. Получаем товары
       const goodsRes = await fetch(`${workerUrl}/api/goods`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await goodsRes.json();
       if (!goodsRes.ok) throw new Error(data.error || 'Ошибка получения товаров');
 
-      // Инициализируем факт (по умолчанию пустая строка или остаток)
       goodsData = data.map(item => ({
         ...item,
-        actual: '' // пользователь заполняет руками
+        actual: ''
       }));
 
       updateCategories();
@@ -192,7 +427,7 @@
 
     } catch (err) {
       alert("Ошибка: " + err.message);
-      tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--danger); padding: 30px;">${err.message}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--danger); padding: 48px;">${err.message}</td></tr>`;
     }
   }
 
@@ -203,6 +438,23 @@
     categories.forEach(cat => {
       select.innerHTML += `<option value="${cat}">${cat}</option>`;
     });
+  }
+
+  function setQuickFact(id, mode) {
+    const item = goodsData.find(g => g.id === id);
+    if (!item) return;
+
+    if (mode === 'EQUAL') {
+      item.actual = item.amount;
+    } else if (mode === 'PLUS') {
+      const cur = item.actual === '' ? item.amount : Number(item.actual);
+      item.actual = cur + 1;
+    } else if (mode === 'MINUS') {
+      const cur = item.actual === '' ? item.amount : Number(item.actual);
+      item.actual = Math.max(0, cur - 1);
+    }
+    renderTable(false);
+    updateStats();
   }
 
   function onFactChange(id, value) {
@@ -216,7 +468,7 @@
   function handleInputKeydown(e, currentIndex) {
     if (e.key === 'Enter') {
       e.preventDefault();
-      const inputs = Array.from(document.querySelectorAll('.qty-input'));
+      const inputs = Array.from(document.querySelectorAll('.fact-input'));
       if (currentIndex + 1 < inputs.length) {
         inputs[currentIndex + 1].focus();
         inputs[currentIndex + 1].select();
@@ -238,6 +490,7 @@
       let matchDiff = true;
       if (diffFilter === 'DIFF') matchDiff = (g.actual !== '' && diff !== 0);
       if (diffFilter === 'DEFICIT') matchDiff = (g.actual !== '' && diff < 0);
+      if (diffFilter === 'UNCHECKED') matchDiff = (g.actual === '');
 
       return matchSearch && matchCat && matchDiff;
     });
@@ -245,39 +498,44 @@
     tbody.innerHTML = filtered.map((item, index) => {
       const hasActual = item.actual !== '';
       const diff = hasActual ? (item.actual - item.amount) : 0;
-      let rowClass = '';
-      let diffText = '—';
+      let diffHtml = '<span style="color:var(--text-muted);font-size:0.85rem;">—</span>';
 
       if (hasActual) {
         if (diff === 0) {
-          rowClass = 'row-ok';
-          diffText = '<span style="color:var(--success)">✓ Норма</span>';
+          diffHtml = '<span class="diff-badge diff-ok">✓ Норма</span>';
         } else if (diff < 0) {
-          rowClass = 'row-deficit';
-          diffText = `<b style="color:var(--danger)">${diff} шт (${diff * item.cost} ₽)</b>`;
+          diffHtml = `<span class="diff-badge diff-deficit">${diff} шт (${diff * item.cost} ₽)</span>`;
         } else {
-          rowClass = 'row-surplus';
-          diffText = `<b style="color:var(--accent)">+${diff} шт (+${diff * item.cost} ₽)</b>`;
+          diffHtml = `<span class="diff-badge diff-surplus">+${diff} шт (+${diff * item.cost} ₽)</span>`;
         }
       }
 
       return `
-        <tr class="${rowClass}">
+        <tr>
           <td>
-            <span class="tag">${item.category}</span>
-            <div style="font-weight: 600; margin-top: 2px;">${item.title}</div>
+            <span class="item-category">${item.category}</span>
+            <div class="item-title">${item.title}</div>
           </td>
-          <td style="text-align: center; color: var(--text-dim);">${item.cost} ₽</td>
-          <td style="text-align: center; font-weight: bold;">${item.amount}</td>
+          <td style="text-align: center; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">
+            ${item.cost} ₽
+          </td>
           <td style="text-align: center;">
-            <input type="number" 
-                   class="qty-input" 
-                   value="${item.actual !== '' ? item.actual : ''}" 
-                   placeholder="0"
-                   onkeydown="handleInputKeydown(event, ${index})"
-                   oninput="onFactChange(${item.id}, this.value)">
+            <span class="stock-badge">${item.amount}</span>
           </td>
-          <td style="text-align: right;">${diffText}</td>
+          <td style="text-align: center;">
+            <div class="fact-control">
+              <button class="quick-btn" title="Совпадает с шеллом" onclick="setQuickFact(${item.id}, 'EQUAL')">✓</button>
+              <button class="quick-btn" onclick="setQuickFact(${item.id}, 'MINUS')">−</button>
+              <input type="number" 
+                     class="fact-input" 
+                     value="${item.actual !== '' ? item.actual : ''}" 
+                     placeholder="—"
+                     onkeydown="handleInputKeydown(event, ${index})"
+                     oninput="onFactChange(${item.id}, this.value)">
+              <button class="quick-btn" onclick="setQuickFact(${item.id}, 'PLUS')">+</button>
+            </div>
+          </td>
+          <td style="text-align: right;">${diffHtml}</td>
         </tr>
       `;
     }).join('');
@@ -306,7 +564,8 @@
     const now = new Date();
     const dateStr = now.toLocaleDateString('ru-RU') + ' ' + now.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'});
 
-    let report = `📦 *Ревизия бара/товара (${dateStr})*\n\n`;
+    let report = `📊 *РЕВИЗИЯ БАРА // ${dateStr}*\n`;
+    report += `━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
     const deficits = [];
     const surpluses = [];
@@ -316,16 +575,16 @@
       if (g.actual !== '') {
         const diff = g.actual - g.amount;
         if (diff < 0) {
-          deficits.push(`❌ ${g.title}: ${diff} шт (${diff * g.cost} ₽)`);
+          deficits.push(`🔴 ${g.title}: ${diff} шт (${diff * g.cost} ₽)`);
           totalDeficit += Math.abs(diff) * g.cost;
         } else if (diff > 0) {
-          surpluses.push(`🔹 ${g.title}: +${diff} шт (+${diff * g.cost} ₽)`);
+          surpluses.push(`🔵 ${g.title}: +${diff} шт (+${diff * g.cost} ₽)`);
         }
       }
     });
 
     if (deficits.length === 0 && surpluses.length === 0) {
-      report += `✅ Все позиции сходятся, расхождений нет.\n`;
+      report += `✅ *Все позиции сходятся, недостач нет!*\n`;
     } else {
       if (deficits.length > 0) {
         report += `*Недостачи:*\n${deficits.join('\n')}\n\n`;
@@ -333,13 +592,14 @@
       if (surpluses.length > 0) {
         report += `*Излишки:*\n${surpluses.join('\n')}\n\n`;
       }
-      report += `*Итоговая недостача:* -${totalDeficit} ₽\n`;
+      report += `━━━━━━━━━━━━━━━━━━━━━\n`;
+      report += `*ИТОГОВАЯ СУММА НЕДОСТАЧИ:* -${totalDeficit} ₽\n`;
     }
 
     navigator.clipboard.writeText(report).then(() => {
       const toast = document.getElementById('toast');
       toast.style.display = 'block';
-      setTimeout(() => { toast.style.display = 'none'; }, 2000);
+      setTimeout(() => { toast.style.display = 'none'; }, 2200);
     });
   }
 </script>
